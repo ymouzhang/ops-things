@@ -1,0 +1,35 @@
+#!/bin/bash
+
+cur_dir=$(dirname $(readlink -e $0))
+echo "当前目录: $cur_dir"
+
+function start() {
+    # 创建数据目录
+    mkdir -p data/prometheus data/grafana
+    
+    # 设置权限
+    sudo chown -R 65534:65534 data/prometheus
+    sudo chmod 777 data/grafana
+    
+    # 确保 prometheus 目录有完整的读写权限
+    sudo chmod -R 777 data/prometheus
+    
+    # 启动服务
+    docker compose up -d
+}
+
+function stop() {
+    docker compose down
+}
+
+case $1 in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    *)
+        echo "Usage: $0 start|stop"
+        ;;
+esac

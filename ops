@@ -1,0 +1,55 @@
+#!/bin/bash
+
+cur_dir=$(dirname $(readlink -e $0))
+echo "当前目录: $cur_dir"
+
+function usage() {
+    echo "Usage: $0 <module_name> start|stop"
+    echo "Available modules:"
+    for module in $(find "$cur_dir" -maxdepth 1 -type d -name "*_env"); do
+        echo "  - $(basename $module | sed 's/_env//')"
+    done
+    exit 1
+}
+
+function module_manage() {
+    local module=$1
+    local action=$2
+    local module_dir="$cur_dir/${module}"
+    
+    if [ ! -d "$module_dir" ]; then
+        echo "错误: 模块目录不存在: $module_dir"
+        exit 1
+    fi
+
+    if [ ! -f "$module_dir/.ops" ]; then
+        echo "错误: 模块操作脚本不存在: $module_dir/.ops"
+        exit 1
+    fi
+
+    # 调用内层的 .ops 脚本
+    cd "$module_dir"
+    bash .ops $action
+}
+
+# 主逻辑
+if [ $# -lt 2 ]; then
+    usage
+fi
+
+module=$1
+action=$2
+
+if ! [[ $module =~ ^[a-zA-Z0-9_]+$ ]]; then
+    echo "错误: 非法的模块名称"
+    usage
+fi
+
+case $action in
+    start|stop)
+        module_manage $module $action
+        ;;
+    *)
+        usage
+        ;;
+esac
